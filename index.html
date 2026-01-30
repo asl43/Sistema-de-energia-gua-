@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Sistema de Faturas</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#eef;
+  padding:20px;
+}
+h2,h3{margin-top:0}
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  max-width:700px;
+  margin:auto;
+  margin-bottom:20px;
+}
+input,select,button{
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+}
+button{
+  background:#007bff;
+  color:#fff;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+button:hover{opacity:0.9}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+th,td{
+  border:1px solid #ccc;
+  padding:6px;
+  font-size:14px;
+}
+th{background:#f0f0f0}
+.status{font-weight:bold;margin-top:10px}
+</style>
+
+</head>
+<body>
+
+<!-- ================= CADASTRO MANUAL ================= -->
+<div class="card">
+<h2>📄 Cadastro Manual de Fatura</h2>
+
+<select id="tipo">
+  <option>Energia</option>
+  <option>Água</option>
+</select>
+
+<input id="cliente" placeholder="Nome do Cliente">
+<input id="cpf" placeholder="CPF">
+<input id="matricula" placeholder="Matrícula">
+<input id="referencia" placeholder="Referência (01/2026)">
+<input type="date" id="emissao">
+<input type="date" id="vencimento">
+<input id="consumo" placeholder="Consumo (kWh ou m³)">
+<input id="valor" placeholder="Valor R$">
+<input id="bandeira" placeholder="Bandeira / Tarifa">
+<input id="pix" placeholder="Código PIX">
+<input id="obs" placeholder="Observações">
+
+<button onclick="salvarFatura()">Salvar Fatura</button>
+<p class="status" id="msgCadastro"></p>
+</div>
+
+<!-- ================= OCR ================= -->
+<div class="card">
+<h2>🤖 Upload de Fatura (OCR Automático)</h2>
+
+<input type="file" id="pdf" accept="application/pdf">
+<button onclick="enviarPDF()">Processar PDF</button>
+
+<p class="status" id="msgOCR"></p>
+</div>
+
+<!-- ================= PAINEL ================= -->
+<div class="card">
+<h2>📊 Histórico de Faturas</h2>
+<button onclick="carregar()">Atualizar Lista</button>
+
+<table id="tabela">
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Cliente</th>
+<th>Referência</th>
+<th>Vencimento</th>
+<th>Consumo</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<script>
+// 🔴 COLE AQUI A URL DO SEU APPS SCRIPT
+const API = 'https://script.google.com/macros/s/AKfycbx48-kV1G1AfaQU_H8y3M349f_cX5eNmjUr59JMLmvdlbyrJU-b3PFLdeO9iZ0d-Eqt/exec';
+
+// ================= CADASTRO MANUAL =================
+function salvarFatura(){
+  const dados = {
+    tipo: tipo.value,
+    cliente: cliente.value,
+    cpf: cpf.value,
+    matricula: matricula.value,
+    referencia: referencia.value,
+    emissao: emissao.value,
+    vencimento: vencimento.value,
+    consumo: consumo.value,
+    valor: valor.value,
+    bandeira: bandeira.value,
+    pix: pix.value,
+    obs: obs.value
+  };
+
+  fetch(API,{
+    method:'POST',
+    body: JSON.stringify(dados)
+  })
+  .then(r=>r.json())
+  .then(()=>{
+    msgCadastro.innerHTML = '✅ Fatura salva com sucesso';
+    carregar();
+  });
+}
+
+// ================= OCR =================
+function enviarPDF(){
+  const file = document.getElementById('pdf').files[0];
+  if(!file){
+    alert('Selecione um PDF');
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(){
+    fetch(API,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        arquivo: reader.result,
+        nome: file.name
+      })
+    })
+    .then(r=>r.json())
+    .then(()=>{
+      msgOCR.innerHTML =
